@@ -1,3 +1,5 @@
+resources/roms/*
+
 .vscode
 .idea
 target/
