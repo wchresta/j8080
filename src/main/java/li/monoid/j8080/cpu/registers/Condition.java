@@ -1,4 +1,4 @@
-package li.monoid.j8080.cpu.opcodes;
+package li.monoid.j8080.cpu.registers;
 
 /*
  * A Condition is a bit pattern within an opCode that represents a condition.

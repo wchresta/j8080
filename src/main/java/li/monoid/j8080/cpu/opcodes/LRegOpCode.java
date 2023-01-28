@@ -1,5 +1,7 @@
 package li.monoid.j8080.cpu.opcodes;
 
+import li.monoid.j8080.cpu.registers.Register;
+
 public class LRegOpCode extends RegOpCode {
     public LRegOpCode(int opCode, String mnemonic, int baseCycles, int size) {
         super(opCode, ~Register.LOWER_REG_MASK, mnemonic, baseCycles, 3, size);

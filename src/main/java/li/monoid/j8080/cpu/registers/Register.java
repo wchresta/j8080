@@ -1,4 +1,4 @@
-package li.monoid.j8080.cpu.opcodes;
+package li.monoid.j8080.cpu.registers;
 
 public enum Register {
     /* In opCodes, register bit pattern appear in the following form:

@@ -1,4 +1,4 @@
-package li.monoid.j8080.cpu.opcodes;
+package li.monoid.j8080.cpu.registers;
 
 public enum RegisterPair {
     BC, DE, HL, SP;
