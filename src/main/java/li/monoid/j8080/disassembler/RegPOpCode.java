@@ -2,15 +2,15 @@ package li.monoid.j8080.disassembler;
 
 import li.monoid.j8080.cpu.RegisterPair;
 
-public class RPOpCode extends BaseOpCode {
+public class RegPOpCode extends BaseOpCode {
     final int rpMask;
 
-    public RPOpCode(int opCode, String mnemonic, int size) {
+    public RegPOpCode(int opCode, String mnemonic, int size) {
         super(opCode, 0xcf, mnemonic, size);
         this.rpMask = 0x30;
     }
 
-    public RPOpCode(int opCode, String mnemonic) {
+    public RegPOpCode(int opCode, String mnemonic) {
         this(opCode, mnemonic, 1);
     }
 
