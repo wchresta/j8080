@@ -2,9 +2,9 @@ package li.monoid.j8080.disassembler;
 
 import li.monoid.j8080.cpu.Condition;
 
-public class CondOpCode extends RegOpCode {
+public class CondOpCode extends URegOpCode {
     public CondOpCode(int opCode, String mnemonic, int size) {
-        super(opCode, mnemonic, 0x38, size);
+        super(opCode, mnemonic, size);
     }
 
     public CondOpCode(int opCode, String mnemonic) {
