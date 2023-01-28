@@ -1,6 +1,4 @@
-package li.monoid.j8080.disassembler;
-
-import li.monoid.j8080.cpu.Register;
+package li.monoid.j8080.cpu.opcodes;
 
 public class LRegOpCode extends BaseOpCode {
     public LRegOpCode(int opCode, String mnemonic, int size) {

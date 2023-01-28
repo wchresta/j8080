@@ -1,6 +1,4 @@
-package li.monoid.j8080.disassembler;
-
-import li.monoid.j8080.cpu.RegisterPair;
+package li.monoid.j8080.cpu.opcodes;
 
 public class RegPOpCode extends BaseOpCode {
     final int rpMask;
