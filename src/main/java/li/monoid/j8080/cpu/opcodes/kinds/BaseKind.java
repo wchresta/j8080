@@ -1,15 +1,23 @@
-package li.monoid.j8080.cpu.opcodes;
+package li.monoid.j8080.cpu.opcodes.kinds;
 
-abstract public class BaseOpCode {
+import li.monoid.j8080.cpu.opcodes.OpType;
+
+abstract public class BaseKind {
     static final int LOWER_M = 0b00000110;
     static final int UPPER_M = 0b00110000;
 
-    /** The masked opCode that this OpCode matches. */
+    /**
+     * The masked opCode that this OpCode matches.
+     */
     final int opCode;
-    /** Instruction bytes are masked with opMask before being compared to opCode */
+    /**
+     * Instruction bytes are masked with opMask before being compared to opCode
+     */
     final int opMask;
-    /** Human-readable name of this opCode */
-    final String mnemonic;
+    /**
+     * Human-readable name of this opCode
+     */
+    final OpType opType;
 
     /** Number of CPU cycles executing this opCode takes */
     final int baseCycles;
@@ -17,10 +25,10 @@ abstract public class BaseOpCode {
     /** Total byte length of this opCode (including arguments) */
     final int size;
 
-    public BaseOpCode(int opCode, int opMask, String mnemonic, int baseCycles, int size) {
+    public BaseKind(int opCode, int opMask, OpType opType, int baseCycles, int size) {
         this.opCode = opCode;
         this.opMask = opMask;
-        this.mnemonic = mnemonic;
+        this.opType = opType;
         this.baseCycles = baseCycles;
         this.size = size;
     }
@@ -35,8 +43,8 @@ abstract public class BaseOpCode {
         return opMask;
     }
 
-    public String getMnemonic() {
-        return mnemonic;
+    public OpType getOpType() {
+        return opType;
     }
 
     public int getSize() {
@@ -48,10 +56,10 @@ abstract public class BaseOpCode {
     }
 
     public String toString() {
-        return mnemonic;
+        return opType.name();
     }
 
     public String fullMnemonic(byte opCode) {
-        return mnemonic;
+        return String.format("%-4s", opType.name());
     }
 }

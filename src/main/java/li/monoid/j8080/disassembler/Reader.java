@@ -1,7 +1,7 @@
 package li.monoid.j8080.disassembler;
 
 import li.monoid.j8080.cpu.Cpu;
-import li.monoid.j8080.cpu.opcodes.BaseOpCode;
+import li.monoid.j8080.cpu.opcodes.OpType;
 
 public class Reader {
     public static class EndOfBuffer extends Exception {
@@ -47,31 +47,31 @@ public class Reader {
         }
 
         byte opCodeByte = this.buf[this.bufPointer];
-        for (BaseOpCode opCode : Cpu.OP_CODES) {
-            if (!opCode.match(opCodeByte)) {
-                continue;
-            }
+        var opCode = Cpu.getOpCode(opCodeByte);
 
-            var opSize = opCode.getSize();
-            String mnemonic = String.format("%04x %s", this.bufPointer, opCode.fullMnemonic(opCodeByte));
-            if (this.bufPointer + opSize - 1 > this.buf.length) {
-                // Out of bounds
-                throw new Error("last opCode has no bytes left", opCodeByte, this.bufPointer, mnemonic);
-            }
-
-            var mnemonicWithArgs = switch (opSize) {
-                case 1 -> mnemonic;
-                case 2 -> String.format("%s %02x", mnemonic, this.buf[this.bufPointer+1]);
-                case 3 -> String.format("%s %02x%02x", mnemonic, this.buf[this.bufPointer+2], this.buf[this.bufPointer+1]);
-                default -> throw new Error("invalid opCode size", opCodeByte, this.bufPointer, mnemonic);
-            };
-            this.bufPointer += opSize;
-
-            return mnemonicWithArgs;
+        if (opCode.opType == OpType.INVALID) {
+            var unknownCode = String.format("%04x ?(%02x)", this.bufPointer, opCodeByte);
+            this.bufPointer += 1;
+            return unknownCode;
         }
-        var unknownCode = String.format("%04x ?(%02x)", this.bufPointer, opCodeByte);
-        this.bufPointer += 1;
-        return unknownCode;
+
+        var opSize = opCode.kind.getSize();
+        String mnemonic = String.format("%04x %s", this.bufPointer, opCode.mnemonic);
+        if (this.bufPointer + opSize - 1 > this.buf.length) {
+            // Out of bounds
+            throw new Error("last opCode has no bytes left", opCodeByte, this.bufPointer, mnemonic);
+        }
+
+        var mnemonicWithArgs = switch (opSize) {
+            case 1 -> mnemonic;
+            case 2 -> String.format("%s %02x", mnemonic, this.buf[this.bufPointer + 1]);
+            case 3 ->
+                    String.format("%s %02x%02x", mnemonic, this.buf[this.bufPointer + 2], this.buf[this.bufPointer + 1]);
+            default -> throw new Error("invalid opCode size", opCodeByte, this.bufPointer, mnemonic);
+        };
+        this.bufPointer += opSize;
+
+        return mnemonicWithArgs;
     }
 
     public String readAll() throws Error {

@@ -1,11 +1,15 @@
-package li.monoid.j8080.cpu.opcodes;
+package li.monoid.j8080.cpu.opcodes.kinds;
 
-/** An OpCode that takes a register as an argumetn */
-abstract class RegOpCode extends BaseOpCode {
+import li.monoid.j8080.cpu.opcodes.OpType;
+
+/**
+ * An OpCode that takes a register as an argumetn
+ */
+abstract class RegKind extends BaseKind {
     final int mFetchCycles;
 
-    public RegOpCode(int opCode, int opMask, String mnemonic, int baseCycles, int mFetchCycles, int size) {
-        super(opCode, opMask, mnemonic, baseCycles, size);
+    public RegKind(int opCode, int opMask, OpType opType, int baseCycles, int mFetchCycles, int size) {
+        super(opCode, opMask, opType, baseCycles, size);
         this.mFetchCycles = mFetchCycles;
     }
 
