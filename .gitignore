@@ -1,4 +1,5 @@
 resources/roms/*
+datasheets/
 
 .vscode
 .idea
