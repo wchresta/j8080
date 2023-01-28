@@ -1,12 +1,12 @@
 package li.monoid.j8080.cpu.opcodes;
 
-public class URegOpCode extends BaseOpCode {
-    public URegOpCode(int opCode, String mnemonic, int size) {
-        super(opCode, ~Register.UPPER_REG_MASK, mnemonic, size);
+public class URegOpCode extends RegOpCode {
+    public URegOpCode(int opCode, String mnemonic, int baseCycles, int mFetchCycles, int size) {
+        super(opCode, ~Register.UPPER_REG_MASK, mnemonic, baseCycles, mFetchCycles, size);
     }
 
-    public URegOpCode(int opCode, String mnemonic) {
-        this(opCode, mnemonic, 1);
+    public URegOpCode(int opCode, String mnemonic, int baseCycles, int mFetchCycles) {
+        this(opCode, mnemonic, baseCycles, mFetchCycles, 1);
     }
 
 
@@ -18,5 +18,10 @@ public class URegOpCode extends BaseOpCode {
     public String fullMnemonic(byte opCode) {
         var regName = registerName(opCode);
         return mnemonic + " " + regName;
+    }
+
+    @Override
+    boolean doesFetchM(byte opCode) {
+        return (opCode & Register.UPPER_REG_MASK) == UPPER_M;
     }
 }
