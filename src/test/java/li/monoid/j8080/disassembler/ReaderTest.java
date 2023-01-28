@@ -3,6 +3,8 @@ package li.monoid.j8080.disassembler;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HexFormat;
+
 public class ReaderTest {
     @Test
     public void allBytesAreValidOpCodes() {
@@ -24,5 +26,30 @@ public class ReaderTest {
             }
             Assert.assertTrue(mnemonic.startsWith("0000 "));
         }
+    }
+
+    @Test
+    public void goldenDisassemble() {
+        byte[] buf = HexFormat.of().parseHex("00c3d4180000f5c5d5e5c38c00");
+        var want = ""
+                .concat("0000 NOP\n")
+                .concat("0001 JMP 18d4\n")
+                .concat("0004 NOP\n")
+                .concat("0005 NOP\n")
+                .concat("0006 PUSH SP\n")
+                .concat("0007 PUSH BC\n")
+                .concat("0008 PUSH DE\n")
+                .concat("0009 PUSH HL\n")
+                .concat("000a JMP 008c\n");
+
+        var reader = new Reader(buf);
+        var got = "";
+        try {
+            got = reader.readAll();
+        } catch (Reader.Error e) {
+            Assert.fail("readAll() got unexpected error: " + e);
+        }
+
+        Assert.assertEquals(want, got);
     }
 }

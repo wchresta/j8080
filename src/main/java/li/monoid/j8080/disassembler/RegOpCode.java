@@ -1,5 +1,7 @@
 package li.monoid.j8080.disassembler;
 
+import li.monoid.j8080.cpu.Register;
+
 public class RegOpCode extends BaseOpCode {
     final int regMask;
 
@@ -12,38 +14,16 @@ public class RegOpCode extends BaseOpCode {
         this(opCode, mnemonic, regMask, 1);
     }
 
-    byte getRegValue(byte opCode) {
-        int rm = regMask;
-        int reg = (regMask & opCode);
-        while ((rm & 1) == 0) {
-            reg >>= 1;
-            rm >>= 1;
+    String registerName(byte opCode) {
+        if (this.regMask == Register.LOWER_REG_MASK) {
+            return Register.fromLowerOpCode(opCode).name();
         }
-        return (byte) reg;
-    }
-    String getRegName(byte reg) throws InvalidFlag {
-        return switch (reg) {
-            case 0b111 -> "A";
-            case 0b000 -> "B";
-            case 0b001 -> "C";
-            case 0b010 -> "D";
-            case 0b011 -> "E";
-            case 0b100 -> "H";
-            case 0b101 -> "L";
-            case 0b110 -> "M";
-            default -> throw new InvalidFlag(reg);
-        };
+        return Register.fromUpperOpCode(opCode).name();
     }
 
     @Override
-    public String fullMnemonic(byte opCode) throws InvalidOpCode {
-        var regValue = this.getRegValue(opCode);
-        var regName = "";
-        try {
-            regName = this.getRegName(regValue);
-        } catch (InvalidFlag e) {
-            throw new InvalidOpCode(opCode, String.format("invalid flag %3b", e.getFlag()));
-        }
+    public String fullMnemonic(byte opCode) {
+        var regName = registerName(opCode);
         return mnemonic + " " + regName;
     }
 

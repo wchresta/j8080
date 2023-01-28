@@ -1,5 +1,7 @@
 package li.monoid.j8080.disassembler;
 
+import li.monoid.j8080.cpu.RegisterPair;
+
 public class RPOpCode extends BaseOpCode {
     final int rpMask;
 
@@ -13,15 +15,8 @@ public class RPOpCode extends BaseOpCode {
     }
 
     @Override
-    public String fullMnemonic(byte opCode) throws InvalidOpCode {
-        int rp = (0x30 & opCode) >> 4;
-        var rpName = switch (rp) {
-            case 0x00 -> "B";
-            case 0x01 -> "D";
-            case 0x02 -> "H";
-            case 0x03 -> "SP";
-            default -> throw new InvalidOpCode(opCode);
-        };
+    public String fullMnemonic(byte opCode) {
+        var rpName = RegisterPair.fromOpCode(opCode);
         return mnemonic + " " + rpName;
     }
 }
