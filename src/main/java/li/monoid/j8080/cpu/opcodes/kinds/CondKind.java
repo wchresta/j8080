@@ -5,7 +5,7 @@ import li.monoid.j8080.cpu.registers.Condition;
 
 public class CondKind extends URegKind {
     public CondKind(int opCode, OpType opType, int baseCycles, int size) {
-        super(opCode, opType, baseCycles, size);
+        super(opCode, opType, baseCycles, 0, size);
     }
 
     public CondKind(int opCode, OpType opType, int baseCycles) {

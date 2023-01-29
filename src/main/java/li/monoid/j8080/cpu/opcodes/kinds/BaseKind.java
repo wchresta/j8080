@@ -1,6 +1,7 @@
 package li.monoid.j8080.cpu.opcodes.kinds;
 
 import li.monoid.j8080.cpu.opcodes.OpType;
+import li.monoid.j8080.memory.Cast;
 
 abstract public class BaseKind {
     static final int LOWER_M = 0b00000110;
@@ -9,23 +10,27 @@ abstract public class BaseKind {
     /**
      * The masked opCode that this OpCode matches.
      */
-    final int opCode;
+    final byte opCode;
     /**
      * Instruction bytes are masked with opMask before being compared to opCode
      */
-    final int opMask;
+    final byte opMask;
     /**
      * Human-readable name of this opCode
      */
     final OpType opType;
 
-    /** Number of CPU cycles executing this opCode takes */
+    /**
+     * Number of CPU cycles executing this opCode takes
+     */
     final int baseCycles;
 
-    /** Total byte length of this opCode (including arguments) */
+    /**
+     * Total byte length of this opCode (including arguments)
+     */
     final int size;
 
-    public BaseKind(int opCode, int opMask, OpType opType, int baseCycles, int size) {
+    public BaseKind(byte opCode, byte opMask, OpType opType, int baseCycles, int size) {
         this.opCode = opCode;
         this.opMask = opMask;
         this.opType = opType;
@@ -33,13 +38,17 @@ abstract public class BaseKind {
         this.size = size;
     }
 
+    public BaseKind(int opCode, int opMask, OpType opType, int baseCycles, int size) {
+        this(Cast.toByte(opCode), Cast.toByte(opMask), opType, baseCycles, size);
+    }
+
     abstract public int getCycles(byte opCode);
 
-    public int getOpCode() {
+    public byte getOpCode() {
         return opCode;
     }
 
-    public int getOpMask() {
+    public byte getOpMask() {
         return opMask;
     }
 

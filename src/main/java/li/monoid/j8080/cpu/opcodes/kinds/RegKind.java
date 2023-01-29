@@ -3,7 +3,7 @@ package li.monoid.j8080.cpu.opcodes.kinds;
 import li.monoid.j8080.cpu.opcodes.OpType;
 
 /**
- * An OpCode that takes a register as an argumetn
+ * An OpCode that takes a register as an argument
  */
 abstract class RegKind extends BaseKind {
     final int mFetchCycles;
