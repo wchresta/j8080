@@ -8,6 +8,7 @@ public class Alu {
     private static final int CARRY_MASK = 0x100;
     private static final int VALUE_CARRY_MASK = VALUE_MASK | CARRY_MASK;
     private int acc = 0;  // Size 8
+
     private int z = 0, s = 0, p = 0, cy = 0;
     // TODO: Add support for auxiliary carry
 
@@ -88,6 +89,23 @@ public class Alu {
 
     public void setCarry(int val) {
         cy = val > 0 ? 1 : 0;
+    }
+
+    public byte getFlagByte() {
+        var flags = 0b00000010;  // Bit 1 is always 1
+        flags |= cy;
+        flags |= p << 2;
+        flags |= z << 6;
+        flags |= s << 7;
+        return Cast.toByte(flags);
+    }
+
+    public void setFlagsFromByte(byte flags) {
+        int iFlags = Byte.toUnsignedInt(flags);
+        cy = iFlags & 1;
+        p = (iFlags >> 2) & 1;
+        z = (iFlags >> 6) & 1;
+        s = (iFlags >> 7) & 1;
     }
 
     /**

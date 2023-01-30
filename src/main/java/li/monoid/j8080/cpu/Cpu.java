@@ -137,8 +137,22 @@ public class Cpu {
                 alu.setCarryFrom(sum);
                 registers.setHL(Cast.toShort(sum));
             }
-            case PUSH -> pushShort(registers.getRegPair(rp));
-            case POP -> registers.setRegPair(rp, popShort());
+            case PUSH -> {
+                if (rp == RegisterPair.SP) { // PSW
+                    pushByte(alu.getAcc());
+                    pushByte(alu.getFlagByte());
+                    break;
+                }
+                pushShort(registers.getRegPair(rp));
+            }
+            case POP -> {
+                if (rp == RegisterPair.SP) { // PSW
+                    alu.setFlagsFromByte(popByte());
+                    alu.setAcc(popByte());
+                    break;
+                }
+                registers.setRegPair(rp, popShort());
+            }
             default -> System.err.println("Unsupported CPU instruction rp: " + opCode.mnemonic);
         }
         return 0;
