@@ -2,7 +2,7 @@ package li.monoid.j8080.system;
 
 import li.monoid.j8080.memory.Cast;
 
-public interface DataReader {
+public interface MemoryReader {
     byte readByte(int address);
 
     default byte readByte(short address) {

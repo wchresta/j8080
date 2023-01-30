@@ -1,11 +1,11 @@
 package li.monoid.j8080.memory;
 
-import li.monoid.j8080.system.DataRW;
+import li.monoid.j8080.system.MemoryRW;
 
 /**
  * Memory provides memory and some functions that reflect hardware circuitry like address space mirroring.
  */
-public class Memory implements DataRW {
+public class Memory implements MemoryRW {
     public static final int CAPACITY = 0x4000;  // The actual memory capacity, regardless of address space mapping.
     public static final int ROM_CAPCITY = 0x2000;
     private final byte[] buffer = new byte[CAPACITY];

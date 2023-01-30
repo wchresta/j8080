@@ -25,10 +25,6 @@ public class App
 
         var system = new System(new Intel8080());
         system.loadRom(rom);
-
-        for (int i = 0; i < 2000; ++i) {
-            java.lang.System.out.print(system);
-            system.step();
-        }
+        system.run();
     }
 }

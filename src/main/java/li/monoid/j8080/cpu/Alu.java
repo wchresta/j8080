@@ -5,7 +5,6 @@ import li.monoid.j8080.memory.Cast;
 public class Alu {
     private static final int VALUE_MASK = 0xff;
     private static final int SIGN_MASK = 0x80;
-    private static final int PARITY_MASK = 0x01;
     private static final int CARRY_MASK = 0x100;
     private static final int VALUE_CARRY_MASK = VALUE_MASK | CARRY_MASK;
     private int acc = 0;  // Size 8
@@ -49,15 +48,24 @@ public class Alu {
     }
 
     private void setSignFrom(int val) {
-        s = (val & SIGN_MASK) > 0 ? 1 : 0;
+        s = (val & SIGN_MASK) >> 7;
     }
 
     private void setParityFrom(int val) {
-        p = (val & PARITY_MASK) == 0 ? 1 : 0;
+        p = 1;  // Parity even --> p=1
+        if ((val & 0x1) > 0) ++p;
+        if ((val & 0x2) > 0) ++p;
+        if ((val & 0x4) > 0) ++p;
+        if ((val & 0x8) > 0) ++p;
+        if ((val & 0x10) > 0) ++p;
+        if ((val & 0x20) > 0) ++p;
+        if ((val & 0x40) > 0) ++p;
+        if ((val & 0x80) > 0) ++p;
+        p &= 1;
     }
 
     public void setCarryFrom(int val) {
-        cy = (val & CARRY_MASK) == 0 ? 1 : 0;
+        cy = (val & CARRY_MASK) >> 8;
     }
 
     private void setFlagsFrom(int val) {
@@ -149,9 +157,7 @@ public class Alu {
 
     public void cmp(int val) {
         // This is like sub, but the accumulator remains unchanged.
-        var tmp = getAcc();
-        sub(val);
-        setAcc(tmp);
+        setFlagsFrom((0xff & acc) - (val & 0xff));
     }
 
     public void rotateLeft() {

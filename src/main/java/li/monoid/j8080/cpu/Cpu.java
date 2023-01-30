@@ -10,6 +10,11 @@ import li.monoid.j8080.cpu.registers.RegisterPair;
 import li.monoid.j8080.cpu.registers.Registers;
 import li.monoid.j8080.memory.Cast;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
 import static li.monoid.j8080.cpu.opcodes.OpType.MOV;
 
 public class Cpu {
@@ -17,6 +22,11 @@ public class Cpu {
     private final Alu alu;
     private final Bus bus;
     private final InstrSet instrSet;
+
+    private final Set<Short> debugPoints = new HashSet<>();
+
+    private final List<Short> debugMemAddresses = new LinkedList<>();
+    private boolean debugInstructions = false;
 
     public Cpu(InstrSet instrSet, Registers registers, Alu alu, Bus bus) {
         this.instrSet = instrSet;
@@ -29,6 +39,17 @@ public class Cpu {
         this(instrSet, new Registers(), new Alu(), bus);
     }
 
+    public void addDebugPoint(short address) {
+        debugPoints.add(address);
+    }
+
+    public void addDebugMemAddress(short address) {
+        debugMemAddresses.add(address);
+    }
+
+    public void setDebugInstructions(boolean debugInstructions) {
+        this.debugInstructions = debugInstructions;
+    }
 
     private void pushByte(byte val) {
         bus.writeByte(registers.decSP(), val);
@@ -65,18 +86,23 @@ public class Cpu {
 
         var kind = opCode.kind;
         var cycles = opCode.kind.getCycles(opCode.opCode);
-        System.out.printf("%s %04x, addr %04x%n", kind.fullMnemonic(opCodeByte), arg, opCodeAddress);
+        if (debugInstructions) {
+            System.out.printf("%04x: %s %04x%n", opCodeAddress, kind.fullMnemonic(opCodeByte), arg);
+        }
         if (kind instanceof UnarKind) {
             cycles += stepUnarKind(opCode, arg);
         } else if (kind instanceof MoveKind) {
             var dst = Register.fromUpperOpCode(opCodeByte);
             var src = Register.fromLowerOpCode(opCodeByte);
-            cycles += stepMoveKind(opCode, src, dst, arg);
+            cycles += stepMoveKind(opCode, src, dst);
         } else if (kind instanceof CondKind) {
             var cond = Condition.fromOpCode(opCodeByte);
             cycles += stepCondKind(opCode, cond, arg);
         } else if (kind instanceof URegKind) {
             var reg = Register.fromUpperOpCode(opCodeByte);
+            cycles += stepRegKind(opCode, reg, arg);
+        } else if (kind instanceof LRegKind) {
+            var reg = Register.fromLowerOpCode(opCodeByte);
             cycles += stepRegKind(opCode, reg, arg);
         } else if (kind instanceof RegPKind) {
             var rp = RegisterPair.fromOpCode(opCodeByte);
@@ -85,6 +111,17 @@ public class Cpu {
             System.err.println("Unsupported CPU instruction kind: " + opCode.mnemonic);
             cycles += 1;
         }
+
+        if (debugPoints.contains(opCodeAddress)) {
+            System.out.print(this);
+            if (debugMemAddresses.size() > 0) {
+                System.out.println("Debug memory:");
+                for (short memAddr : debugMemAddresses) {
+                    System.out.printf("  %04x: %02x%n", memAddr, bus.readByte(memAddr));
+                }
+            }
+        }
+
         return cycles;
     }
 
@@ -153,7 +190,7 @@ public class Cpu {
         }
     }
 
-    private int stepMoveKind(OpCode opCode, Register src, Register dst, short arg) {
+    private int stepMoveKind(OpCode opCode, Register src, Register dst) {
         if (opCode.opType != MOV) {
             System.err.println("Unsupported CPU instruction move: " + opCode.mnemonic);
             return 0;
@@ -210,13 +247,16 @@ public class Cpu {
             case CALL -> call(arg);
             case CMA -> alu.not();
             case CMC -> alu.setCarry(1 ^ alu.getCarry());
+            case CPI -> alu.cmp(0xff & arg);
             case DAA -> alu.daa();
+            case IN -> alu.setAcc(bus.readFromDevice(Cast.toByte(arg)));
             case JMP -> registers.setPC(arg);
             case LDA -> alu.setAcc(bus.readByte(arg));
             case LHLD -> registers.setHL(bus.readShort(arg));
             case NOP -> {
             }
             case ORI -> alu.or(arg);
+            case OUT -> bus.writeToDevice(Cast.toByte(arg), alu.getAcc());
             case PCHL -> registers.setPC(registers.getHL());
             case RAL -> alu.rotateLeft();
             case RAR -> alu.rotateRight();
@@ -245,17 +285,17 @@ public class Cpu {
     }
 
     public String toString() {
-        return String.format("Acc: %02x\n", alu.getAcc()) +
-                String.format("BC: %04x\n", registers.getBC()) +
-                String.format("DE: %04x\n", registers.getDE()) +
-                String.format("HL: %04x\n", registers.getHL()) +
-                String.format("SP: %04x\n", registers.getSP()) +
-                String.format("PC: %04x\n", registers.getPC()) +
-                String.format("Instr: %02x\n", bus.readByte(registers.getPC())) +
-                String.format("Flags: ZSPC %x%x%x%x\n", alu.isZ() ? 1 : 0, alu.isS() ? 1 : 0, alu.isP() ? 1 : 0, alu.isCY() ? 1 : 0) +
-                String.format("Stack: %04x%n", bus.readShort(registers.getSP() > 3 ? registers.getSP() - 4 : 0)) +
-                String.format("       %04x%n", bus.readShort(registers.getSP() > 1 ? registers.getSP() - 2 : 0)) +
-                String.format("     > %04x%n", bus.readShort(registers.getSP())) +
-                String.format("       %04x%n", bus.readShort(registers.getSP() + 2));
+        return String.format("  Acc: %02x\n", alu.getAcc()) +
+                String.format("  BC: %04x\n", registers.getBC()) +
+                String.format("  DE: %04x\n", registers.getDE()) +
+                String.format("  HL: %04x\n", registers.getHL()) +
+                String.format("  SP: %04x\n", registers.getSP()) +
+                String.format("  PC: %04x\n", registers.getPC()) +
+                String.format("  Instr: %02x\n", bus.readByte(registers.getPC())) +
+                String.format("  Flags: ZSPC %x%x%x%x\n", alu.isZ() ? 1 : 0, alu.isS() ? 1 : 0, alu.isP() ? 1 : 0, alu.isCY() ? 1 : 0) +
+                String.format("  Stack: %04x%n", bus.readShort(registers.getSP() > 3 ? registers.getSP() - 4 : 0)) +
+                String.format("         %04x%n", bus.readShort(registers.getSP() > 1 ? registers.getSP() - 2 : 0)) +
+                String.format("       > %04x%n", bus.readShort(registers.getSP())) +
+                String.format("         %04x%n", bus.readShort(registers.getSP() + 2));
     }
 }

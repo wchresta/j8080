@@ -1,21 +1,58 @@
 package li.monoid.j8080.bus;
 
-import li.monoid.j8080.system.DataRW;
+import li.monoid.j8080.device.InputDevice;
+import li.monoid.j8080.device.OutputDevice;
+import li.monoid.j8080.system.DeviceIO;
+import li.monoid.j8080.system.MemoryRW;
 
-public class Bus implements DataRW {
-    private final DataRW dataRW;
+import java.util.HashMap;
+import java.util.Map;
 
-    public Bus(DataRW dataRW) {
-        this.dataRW = dataRW;
+public class Bus implements MemoryRW, DeviceIO {
+    private final MemoryRW memoryRW;
+    private final Map<Byte, InputDevice> inputDeviceMap = new HashMap<>();
+    private final Map<Byte, OutputDevice> outputDeviceMap = new HashMap<>();
+
+    public Bus(MemoryRW memoryRW) {
+        this.memoryRW = memoryRW;
+    }
+
+    public void registerInputDevice(byte deviceNo, InputDevice device) {
+        inputDeviceMap.put(deviceNo, device);
+    }
+
+    public void registerOutputDevice(byte deviceNo, OutputDevice device) {
+        outputDeviceMap.put(deviceNo, device);
     }
 
     @Override
     public byte readByte(int address) {
-        return dataRW.readByte(address);
+        return memoryRW.readByte(address);
     }
 
     @Override
     public void writeByte(int address, byte data) {
-        dataRW.writeByte(address, data);
+        memoryRW.writeByte(address, data);
+    }
+
+    @Override
+    public void writeToDevice(byte deviceNo, byte data) {
+        var device = outputDeviceMap.get(deviceNo);
+        if (device == null) {
+            System.err.printf("Cannot send data to unknown device: %02x%n", deviceNo);
+            return;
+        }
+
+        device.receiveData(data);
+    }
+
+    @Override
+    public byte readFromDevice(byte deviceNo) {
+        var device = inputDeviceMap.get(deviceNo);
+        if (device == null) {
+            System.err.printf("Cannot receive data from unknown device: %02x%n", deviceNo);
+            return 0x00;
+        }
+        return device.sendData();
     }
 }

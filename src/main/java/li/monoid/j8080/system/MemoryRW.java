@@ -2,7 +2,7 @@ package li.monoid.j8080.system;
 
 import li.monoid.j8080.memory.Cast;
 
-public interface DataRW extends DataReader {
+public interface MemoryRW extends MemoryReader {
     void writeByte(int address, byte data);
 
     default void writeByte(short address, byte data) {
