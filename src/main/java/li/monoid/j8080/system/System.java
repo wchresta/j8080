@@ -9,7 +9,7 @@ import li.monoid.j8080.device.WatchDog;
 import li.monoid.j8080.memory.Memory;
 
 public class System {
-    long MICROS_PER_CYCLE = 0L;
+    int NANOS_PER_CYCLE = 2;
     private final Memory memory = new Memory();
     private final Bus bus = new Bus(memory);
     private final Cpu cpu;
@@ -27,7 +27,8 @@ public class System {
         bus.registerOutputDevice((byte) 0x05, new DebugOutput("Sound port 5"));
         bus.registerOutputDevice((byte) 0x06, new WatchDog());
 
-        //cpu.addDebugPoint((short) 0x1a65);
+        cpu.addDebugPoint((short) 0x08);  // Visualize interrupt 1
+        cpu.addDebugPoint((short) 0x10);  // Visualize interrupt 2
     }
 
     public void loadRom(byte[] rom) {
@@ -44,17 +45,32 @@ public class System {
     }
 
     public void run() {
+        long timeStart = java.lang.System.currentTimeMillis();
+        long lastNano = java.lang.System.nanoTime();
         for (int i = 0; i < 10_000_000; ++i) {
             if (cpu.isHalted()) {
                 java.lang.System.out.println("CPU is halted... waiting for interrupt.");
                 break;
             }
             //java.lang.System.out.print(system);
-            var cycles = step();
-            try {
-                Thread.sleep((cycles * MICROS_PER_CYCLE) / 1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            int nanosToSleep = step() * NANOS_PER_CYCLE;
+            var currNano = java.lang.System.nanoTime();
+            nanosToSleep -= currNano - lastNano;
+            lastNano = currNano;
+
+            // For testing: Send interrupt every 0.2 seconds
+            var currTime = java.lang.System.currentTimeMillis();
+            if (currTime > timeStart + 200L) {
+                cpu.interrupt(0x02);
+                timeStart = currTime;
+            }
+
+            if (nanosToSleep > 0) {
+                try {
+                    Thread.sleep(0, nanosToSleep);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }

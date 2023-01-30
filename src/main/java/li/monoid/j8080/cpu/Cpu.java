@@ -232,11 +232,18 @@ public class Cpu {
         return 0;
     }
 
+    public void interrupt(int nnn) {
+        pushShort(registers.getPC());
+        registers.setPC(8 * nnn);
+        interruptsEnabled = false;
+    }
+
     private int stepRegKind(OpCode opCode, Register reg, short arg) {
         switch (opCode.opType) {
             case ADC -> alu.addC(readFromReg(reg));
             case ADD -> alu.add(readFromReg(reg));
             case ANA -> alu.and(readFromReg(reg));
+            case CMP -> alu.cmp(readFromReg(reg));
             case DCR -> {
                 var val = readFromReg(reg) - 1;
                 writeToReg(reg, Cast.toByte(val));
@@ -247,9 +254,9 @@ public class Cpu {
                 writeToReg(reg, Cast.toByte(val));
                 alu.setZSPFrom(val);
             }
-            case CMP -> alu.cmp(readFromReg(reg));
             case MVI -> writeToReg(reg, Cast.toByte(arg));
             case ORA -> alu.or(readFromReg(reg));
+            case RST -> interrupt((0b001110000 & opCode.opCode) >> 4);
             case SBB -> alu.subC(readFromReg(reg));
             case SUB -> alu.sub(readFromReg(reg));
             case XRA -> alu.xor(readFromReg(reg));
