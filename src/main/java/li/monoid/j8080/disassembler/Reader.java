@@ -1,6 +1,6 @@
 package li.monoid.j8080.disassembler;
 
-import li.monoid.j8080.cpu.Cpu;
+import li.monoid.j8080.cpu.instrset.InstrSet;
 import li.monoid.j8080.cpu.opcodes.OpType;
 
 public class Reader {
@@ -29,10 +29,12 @@ public class Reader {
         }
     }
 
+    private final InstrSet instrSet;
     private final byte[] buf;
     private int bufPointer;
 
-    public Reader(byte[] buf) {
+    public Reader(InstrSet instrSet, byte[] buf) {
+        this.instrSet = instrSet;
         this.buf = buf;
         this.bufPointer = 0;
     }
@@ -47,7 +49,7 @@ public class Reader {
         }
 
         byte opCodeByte = this.buf[this.bufPointer];
-        var opCode = Cpu.getOpCode(opCodeByte);
+        var opCode = instrSet.getOpCode(opCodeByte);
 
         if (opCode.opType == OpType.INVALID) {
             var unknownCode = String.format("%04x ?(%02x)", this.bufPointer, opCodeByte);

@@ -1,4 +1,4 @@
-package li.monoid.j8080.cpu;
+package li.monoid.j8080.cpu.instrset;
 
 import li.monoid.j8080.cpu.opcodes.OpCode;
 import li.monoid.j8080.cpu.opcodes.kinds.*;
@@ -6,7 +6,7 @@ import li.monoid.j8080.memory.Cast;
 
 import static li.monoid.j8080.cpu.opcodes.OpType.*;
 
-class Cpu8080 {
+public class Intel8080 implements InstrSet {
     private static final BaseKind[] OP_KINDS = {
             new UnarKind(0x00, NOP, 4),
             new UnarKind(0x07, RLC, 4),
@@ -85,7 +85,7 @@ class Cpu8080 {
         }
     }
 
-    public static OpCode getOpCode(byte opCode) {
+    public OpCode getOpCode(byte opCode) {
         return OP_CODES[Byte.toUnsignedInt(opCode)];
     }
 }

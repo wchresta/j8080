@@ -1,6 +1,7 @@
 package li.monoid.j8080.cpu;
 
 import li.monoid.j8080.bus.Bus;
+import li.monoid.j8080.cpu.instrset.InstrSet;
 import li.monoid.j8080.cpu.opcodes.OpCode;
 import li.monoid.j8080.cpu.opcodes.kinds.*;
 import li.monoid.j8080.cpu.registers.Condition;
@@ -11,19 +12,21 @@ import li.monoid.j8080.memory.Cast;
 
 import static li.monoid.j8080.cpu.opcodes.OpType.MOV;
 
-public class Cpu extends Cpu8080 {
+public class Cpu {
     private final Registers registers;
     private final Alu alu;
     private final Bus bus;
+    private final InstrSet instrSet;
 
-    public Cpu(Registers registers, Alu alu, Bus bus) {
+    public Cpu(InstrSet instrSet, Registers registers, Alu alu, Bus bus) {
+        this.instrSet = instrSet;
         this.registers = registers;
         this.bus = bus;
         this.alu = alu;
     }
 
-    public Cpu(Bus bus) {
-        this(new Registers(), new Alu(), bus);
+    public Cpu(InstrSet instrSet, Bus bus) {
+        this(instrSet, new Registers(), new Alu(), bus);
     }
 
 
@@ -49,7 +52,7 @@ public class Cpu extends Cpu8080 {
     public int step() {
         var opCodeAddress = registers.getPC();
         var opCodeByte = bus.readByte(opCodeAddress);
-        var opCode = getOpCode(opCodeByte);
+        var opCode = instrSet.getOpCode(opCodeByte);
         registers.incPC();
 
         var argNum = opCode.kind.getSize() - 1;

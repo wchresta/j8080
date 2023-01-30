@@ -1,5 +1,6 @@
 package li.monoid.j8080;
 
+import li.monoid.j8080.cpu.instrset.Intel8080;
 import li.monoid.j8080.system.System;
 
 import java.io.IOException;
@@ -22,7 +23,7 @@ public class App
             java.lang.System.exit(1);
         }
 
-        var system = new System();
+        var system = new System(new Intel8080());
         system.loadRom(rom);
 
         for (int i = 0; i < 2000; ++i) {

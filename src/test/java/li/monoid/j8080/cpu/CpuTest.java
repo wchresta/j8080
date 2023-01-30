@@ -1,6 +1,7 @@
 package li.monoid.j8080.cpu;
 
 import li.monoid.j8080.bus.Bus;
+import li.monoid.j8080.cpu.instrset.Intel8080;
 import li.monoid.j8080.cpu.registers.Registers;
 import li.monoid.j8080.memory.Memory;
 import org.junit.Assert;
@@ -12,7 +13,7 @@ public class CpuTest {
     @Test
     public void testOpCodes() {
         byte opCode = (byte) 0xc2;
-        Assert.assertEquals("J NZ", Cpu.getOpCode(opCode).kind.fullMnemonic(opCode));
+        Assert.assertEquals("J NZ", new Intel8080().getOpCode(opCode).kind.fullMnemonic(opCode));
     }
 
     @Test
@@ -21,7 +22,7 @@ public class CpuTest {
         Bus bus = new Bus(mem);
         Registers registers = new Registers();
         Alu alu = new Alu();
-        Cpu cpu = new Cpu(registers, alu, bus);
+        Cpu cpu = new Cpu(new Intel8080(), registers, alu, bus);
 
         registers.setHL((short) 0x207f);
         registers.setPC((short) 0x0000);
@@ -38,7 +39,7 @@ public class CpuTest {
         Bus bus = new Bus(mem);
         Registers registers = new Registers();
         Alu alu = new Alu();
-        Cpu cpu = new Cpu(registers, alu, bus);
+        Cpu cpu = new Cpu(new Intel8080(), registers, alu, bus);
 
         mem.unsafeWriteByte(0x18d2, (byte) 0xcd); // CALL
         mem.unsafeWriteByte(0x18d3, (byte) 0x3a); // CALL argL

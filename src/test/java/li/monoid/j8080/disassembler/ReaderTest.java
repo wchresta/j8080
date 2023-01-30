@@ -1,5 +1,6 @@
 package li.monoid.j8080.disassembler;
 
+import li.monoid.j8080.cpu.instrset.Intel8080;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -8,8 +9,8 @@ import java.util.HexFormat;
 public class ReaderTest {
     @Test
     public void allBytesAreValidOpCodes() {
-        byte[] buf = {0,0,0};
-        var reader = new Reader(buf);
+        byte[] buf = {0, 0, 0};
+        var reader = new Reader(new Intel8080(), buf);
         for (int i = 0; i <= 0xff; ++i) {
             switch (i) {
                 // Ignore invalid opCodes
@@ -42,7 +43,7 @@ public class ReaderTest {
                 .concat("0009 PUSH HL\n")
                 .concat("000a JMP  008c\n");
 
-        var reader = new Reader(buf);
+        var reader = new Reader(new Intel8080(), buf);
         var got = "";
         try {
             got = reader.readAll();
