@@ -28,6 +28,11 @@ public class Cpu {
     private final List<Short> debugMemAddresses = new LinkedList<>();
     private boolean debugInstructions = false;
 
+    private boolean interruptsEnabling = false;
+    private boolean interruptsEnabled = false;
+
+    private boolean isHalted = false;
+
     public Cpu(InstrSet instrSet, Registers registers, Alu alu, Bus bus) {
         this.instrSet = instrSet;
         this.registers = registers;
@@ -37,6 +42,14 @@ public class Cpu {
 
     public Cpu(InstrSet instrSet, Bus bus) {
         this(instrSet, new Registers(), new Alu(), bus);
+    }
+
+    public boolean isInterruptsEnabled() {
+        return interruptsEnabled;
+    }
+
+    public boolean isHalted() {
+        return isHalted;
     }
 
     public void addDebugPoint(short address) {
@@ -75,6 +88,12 @@ public class Cpu {
         var opCodeByte = bus.readByte(opCodeAddress);
         var opCode = instrSet.getOpCode(opCodeByte);
         registers.incPC();
+
+        // When EI is called, interrupts are not immediately activated, but only after on the next instruction.
+        if (interruptsEnabling) {
+            interruptsEnabled = true;
+            interruptsEnabling = false;
+        }
 
         var argNum = opCode.kind.getSize() - 1;
         short arg = 0x0000;
@@ -263,6 +282,9 @@ public class Cpu {
             case CMC -> alu.setCarry(1 ^ alu.getCarry());
             case CPI -> alu.cmp(0xff & arg);
             case DAA -> alu.daa();
+            case DI -> interruptsEnabled = false;
+            case EI -> interruptsEnabling = true;  // Not immediately effective
+            case HLT -> isHalted = true;
             case IN -> alu.setAcc(bus.readFromDevice(Cast.toByte(arg)));
             case JMP -> registers.setPC(arg);
             case LDA -> alu.setAcc(bus.readByte(arg));

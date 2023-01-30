@@ -44,7 +44,11 @@ public class System {
     }
 
     public void run() {
-        for (int i = 0; i < 80_000; ++i) {
+        for (int i = 0; i < 10_000_000; ++i) {
+            if (cpu.isHalted()) {
+                java.lang.System.out.println("CPU is halted... waiting for interrupt.");
+                break;
+            }
             //java.lang.System.out.print(system);
             var cycles = step();
             try {
