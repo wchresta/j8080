@@ -25,6 +25,11 @@ public class App
 
         var system = new System(new Intel8080());
         system.loadRom(rom);
-        system.run();
+        system.turnOn();
+        try {
+            Thread.sleep(1000*30);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

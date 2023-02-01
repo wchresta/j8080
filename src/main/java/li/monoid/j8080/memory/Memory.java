@@ -35,7 +35,7 @@ public class Memory implements MemoryRW {
         return 0;
     }
 
-    /* Bulk read, for debugging */
+    /* Bulk read */
     public byte[] readBytes(int address, int length) {
         var out = new byte[length];
         System.arraycopy(buffer, address, out, 0, length);

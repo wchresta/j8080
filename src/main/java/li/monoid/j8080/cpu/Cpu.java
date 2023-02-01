@@ -10,14 +10,11 @@ import li.monoid.j8080.cpu.registers.RegisterPair;
 import li.monoid.j8080.cpu.registers.Registers;
 import li.monoid.j8080.memory.Cast;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static li.monoid.j8080.cpu.opcodes.OpType.MOV;
 
-public class Cpu {
+public class Cpu implements InterruptHandler {
     private final Registers registers;
     private final Alu alu;
     private final Bus bus;
@@ -30,8 +27,10 @@ public class Cpu {
 
     private boolean interruptsEnabling = false;
     private boolean interruptsEnabled = false;
+    private int interruptSet = -1;
 
     private boolean isHalted = false;
+    private final LinkedList<Integer> readyInterrupts = new LinkedList<>();
 
     public Cpu(InstrSet instrSet, Registers registers, Alu alu, Bus bus) {
         this.instrSet = instrSet;
@@ -42,10 +41,6 @@ public class Cpu {
 
     public Cpu(InstrSet instrSet, Bus bus) {
         this(instrSet, new Registers(), new Alu(), bus);
-    }
-
-    public boolean isInterruptsEnabled() {
-        return interruptsEnabled;
     }
 
     public boolean isHalted() {
@@ -84,6 +79,14 @@ public class Cpu {
     }
 
     public int step() {
+        if (interruptSet >= 0 && interruptsEnabled) {
+            var nnn = interruptSet;
+            interruptsEnabled = false;
+            interruptSet = -1;
+            return interrupt(nnn);
+        }
+
+
         var opCodeAddress = registers.getPC();
         var opCodeByte = bus.readByte(opCodeAddress);
         var opCode = instrSet.getOpCode(opCodeByte);
@@ -232,10 +235,15 @@ public class Cpu {
         return 0;
     }
 
-    public void interrupt(int nnn) {
+    @Override
+    public void handleInterrupt(int nnn) {
+        interruptSet = nnn;
+    }
+
+    private int interrupt(int nnn) {
         pushShort(registers.getPC());
         registers.setPC(8 * nnn);
-        interruptsEnabled = false;
+        return 11;
     }
 
     private int stepRegKind(OpCode opCode, Register reg, short arg) {
@@ -290,7 +298,7 @@ public class Cpu {
             case CPI -> alu.cmp(0xff & arg);
             case DAA -> alu.daa();
             case DI -> interruptsEnabled = false;
-            case EI -> interruptsEnabling = true;  // Not immediately effective
+            case EI -> { System.out.println("Enable interrupt"); interruptsEnabling = true; } // Not immediately effective
             case HLT -> isHalted = true;
             case IN -> alu.setAcc(bus.readFromDevice(Cast.toByte(arg)));
             case JMP -> registers.setPC(arg);
@@ -310,6 +318,7 @@ public class Cpu {
             case SHLD -> bus.writeShort(arg, registers.getHL());
             case SPHL -> registers.setSP(registers.getHL());
             case STA -> bus.writeByte(arg, alu.getAcc());
+            case STC -> alu.setCarry(1);
             case SUI -> alu.sub(arg);
             case XCHG -> {
                 var de = registers.getDE();
@@ -327,18 +336,31 @@ public class Cpu {
         return 0;
     }
 
+    public String showStack(int size) {
+        var sb = new StringBuilder(String.format("  Stack: %04x%n", bus.readShort(registers.getSP() > 1 ? registers.getSP() - 2 : 0)));
+        sb.append(String.format("  %04x > %04x%n", registers.getSP(), bus.readShort(registers.getSP())));
+        for (int i = 1; i < size; ++i) {
+            sb.append(String.format("  %04x   %04x%n", registers.getSP()+2*i, bus.readShort(registers.getSP() + 2*i)));
+        }
+        return sb.toString();
+    }
+
+    public String showRegisters() {
+        return String.format("  Acc: %02x%n", alu.getAcc()) +
+                String.format("  BC: %04x%n", registers.getBC()) +
+                String.format("  DE: %04x%n", registers.getDE()) +
+                String.format("  HL: %04x%n", registers.getHL()) +
+                String.format("  SP: %04x%n", registers.getSP()) +
+                String.format("  PC: %04x%n", registers.getPC()) +
+                String.format("  Instr: %02x%n", bus.readByte(registers.getPC())) +
+                String.format("  Flags: ZSPC %x%x%x%x%n", alu.isZ() ? 1 : 0, alu.isS() ? 1 : 0, alu.isP() ? 1 : 0, alu.isCY() ? 1 : 0);
+    }
+
+    public String coreDump(int context) {
+        return showRegisters() + showStack(context);
+    }
+
     public String toString() {
-        return String.format("  Acc: %02x\n", alu.getAcc()) +
-                String.format("  BC: %04x\n", registers.getBC()) +
-                String.format("  DE: %04x\n", registers.getDE()) +
-                String.format("  HL: %04x\n", registers.getHL()) +
-                String.format("  SP: %04x\n", registers.getSP()) +
-                String.format("  PC: %04x\n", registers.getPC()) +
-                String.format("  Instr: %02x\n", bus.readByte(registers.getPC())) +
-                String.format("  Flags: ZSPC %x%x%x%x\n", alu.isZ() ? 1 : 0, alu.isS() ? 1 : 0, alu.isP() ? 1 : 0, alu.isCY() ? 1 : 0) +
-                String.format("  Stack: %04x%n", bus.readShort(registers.getSP() > 3 ? registers.getSP() - 4 : 0)) +
-                String.format("         %04x%n", bus.readShort(registers.getSP() > 1 ? registers.getSP() - 2 : 0)) +
-                String.format("       > %04x%n", bus.readShort(registers.getSP())) +
-                String.format("         %04x%n", bus.readShort(registers.getSP() + 2));
+        return showRegisters() + showStack(4);
     }
 }

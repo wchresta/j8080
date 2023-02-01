@@ -16,7 +16,7 @@
      ];
     };
 
-    myJre = pkgs.jdk;
+    myJre = pkgs.jdk17;
 
     # For usage, see https://github.com/fzakaria/mvn2nix
 
@@ -28,6 +28,8 @@
       pname = "j8080";
       version = "0.1-SNAPSHOT";
       src = ./.;
+
+      jdk = myJre;
 
       nativeBuildInputs = with pkgs; [ jdk maven makeWrapper ];
       buildPhase = "mvn --offline -Dmaven.repo.local=${j8080-repo} package";

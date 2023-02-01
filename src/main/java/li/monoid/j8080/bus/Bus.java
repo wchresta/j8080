@@ -1,5 +1,6 @@
 package li.monoid.j8080.bus;
 
+import li.monoid.j8080.cpu.InterruptHandler;
 import li.monoid.j8080.device.InputDevice;
 import li.monoid.j8080.device.OutputDevice;
 import li.monoid.j8080.system.DeviceIO;
@@ -10,11 +11,16 @@ import java.util.Map;
 
 public class Bus implements MemoryRW, DeviceIO {
     private final MemoryRW memoryRW;
+    private InterruptHandler interruptHandler;
     private final Map<Byte, InputDevice> inputDeviceMap = new HashMap<>();
     private final Map<Byte, OutputDevice> outputDeviceMap = new HashMap<>();
 
     public Bus(MemoryRW memoryRW) {
         this.memoryRW = memoryRW;
+    }
+
+    public void setInterruptHandler(InterruptHandler interruptHandler) {
+        this.interruptHandler = interruptHandler;
     }
 
     public void registerInputDevice(byte deviceNo, InputDevice device) {
@@ -23,6 +29,13 @@ public class Bus implements MemoryRW, DeviceIO {
 
     public void registerOutputDevice(byte deviceNo, OutputDevice device) {
         outputDeviceMap.put(deviceNo, device);
+    }
+
+    public void interrupt(int nnn) {
+        if (interruptHandler == null) {
+            return;
+        }
+        interruptHandler.handleInterrupt(nnn);
     }
 
     @Override

@@ -7,15 +7,24 @@ import li.monoid.j8080.device.ConstantInput;
 import li.monoid.j8080.device.DebugOutput;
 import li.monoid.j8080.device.WatchDog;
 import li.monoid.j8080.memory.Memory;
+import li.monoid.j8080.screen.Screen;
 
-public class System {
-    int NANOS_PER_CYCLE = 2;
+import java.util.concurrent.*;
+
+public class System implements Runnable {
     private final Memory memory = new Memory();
     private final Bus bus = new Bus(memory);
+
+    private final Screen screen = new Screen(memory, bus);
+
     private final Cpu cpu;
+
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ScheduledFuture<?> cpuTask;
 
     public System(InstrSet instrSet) {
         cpu = new Cpu(instrSet, bus);
+        bus.setInterruptHandler(cpu);
 
         bus.registerInputDevice((byte) 0x00, new ConstantInput((byte) 0b00001110)); // Human user interface (ignored)
         bus.registerInputDevice((byte) 0x01, new ConstantInput((byte) 0b00001000)); // Human user interface 2
@@ -35,44 +44,29 @@ public class System {
         memory.loadRom(rom);
     }
 
-    public int step() {
+    public void run() {
+        if (cpu.isHalted()) {
+            java.lang.System.out.println("CPU is halted... waiting for interrupt.");
+            return;
+        }
+
         try {
-            return cpu.step(); // TODO: Keep track of cycle
+            cpu.step(); // TODO: Keep track of cycle
         } catch (IllegalStateException e) {
             java.lang.System.err.print(cpu);
-            throw e;
+            java.lang.System.exit(1);
         }
     }
 
-    public void run() {
-        long timeStart = java.lang.System.currentTimeMillis();
-        long lastNano = java.lang.System.nanoTime();
-        for (int i = 0; i < 10_000_000; ++i) {
-            if (cpu.isHalted()) {
-                java.lang.System.out.println("CPU is halted... waiting for interrupt.");
-                break;
-            }
-            //java.lang.System.out.print(system);
-            int nanosToSleep = step() * NANOS_PER_CYCLE;
-            var currNano = java.lang.System.nanoTime();
-            nanosToSleep -= currNano - lastNano;
-            lastNano = currNano;
+    public void turnOn() {
+        screen.turnOn();
 
-            // For testing: Send interrupt every 0.2 seconds
-            var currTime = java.lang.System.currentTimeMillis();
-            if (currTime > timeStart + 200L) {
-                cpu.interrupt(0x02);
-                timeStart = currTime;
-            }
+        cpuTask = scheduler.scheduleAtFixedRate(this, 0, 1000000000 / 1996800L, TimeUnit.NANOSECONDS);
+    }
 
-            if (nanosToSleep > 0) {
-                try {
-                    Thread.sleep(0, nanosToSleep);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
+    public void turnOff() {
+        screen.turnOff();
+        cpuTask.cancel(false);
     }
 
     public String toString() {
