@@ -42,9 +42,6 @@ public class System implements Runnable {
         bus.registerInputDevice((byte) 0x03, shiftDevice);
         bus.registerOutputDevice((byte) 0x02, shiftDevice);
         bus.registerOutputDevice((byte) 0x04, shiftDevice);
-
-        cpu.addDebugPoint((short) 0x08);  // Visualize interrupt 1
-        cpu.addDebugPoint((short) 0x10);  // Visualize interrupt 2
     }
 
     public void loadRom(byte[] rom) {
@@ -60,6 +57,7 @@ public class System implements Runnable {
         try {
             cpu.step(); // TODO: Keep track of cycle
         } catch (IllegalStateException e) {
+            java.lang.System.err.print(e);
             java.lang.System.err.print(cpu);
             java.lang.System.exit(1);
         }

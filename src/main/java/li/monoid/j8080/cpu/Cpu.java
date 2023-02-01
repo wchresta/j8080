@@ -10,7 +10,10 @@ import li.monoid.j8080.cpu.registers.RegisterPair;
 import li.monoid.j8080.cpu.registers.Registers;
 import li.monoid.j8080.memory.Cast;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import static li.monoid.j8080.cpu.opcodes.OpType.MOV;
 
@@ -30,7 +33,6 @@ public class Cpu implements InterruptHandler {
     private int interruptSet = -1;
 
     private boolean isHalted = false;
-    private final LinkedList<Integer> readyInterrupts = new LinkedList<>();
 
     public Cpu(InstrSet instrSet, Registers registers, Alu alu, Bus bus) {
         this.instrSet = instrSet;
@@ -298,7 +300,7 @@ public class Cpu implements InterruptHandler {
             case CPI -> alu.cmp(0xff & arg);
             case DAA -> alu.daa();
             case DI -> interruptsEnabled = false;
-            case EI -> { System.out.println("Enable interrupt"); interruptsEnabling = true; } // Not immediately effective
+            case EI -> interruptsEnabling = true; // Not immediately effective
             case HLT -> isHalted = true;
             case IN -> alu.setAcc(bus.readFromDevice(Cast.toByte(arg)));
             case JMP -> registers.setPC(arg);
@@ -328,8 +330,9 @@ public class Cpu implements InterruptHandler {
             case XRI -> alu.xor(arg);
             case XTHL -> {
                 var sp = registers.getSP();
-                registers.setSP(registers.getHL());
-                registers.setHL(sp);
+                var dataOnStack = bus.readShort(sp);
+                bus.writeShort(sp, registers.getHL());
+                registers.setHL(dataOnStack);
             }
             default -> System.err.println("Unsupported CPU instruction unar: " + opCode.mnemonic);
         }
