@@ -1,8 +1,8 @@
 package li.monoid.j8080.bus;
 
 import li.monoid.j8080.cpu.InterruptHandler;
-import li.monoid.j8080.device.InputDevice;
-import li.monoid.j8080.device.OutputDevice;
+import li.monoid.j8080.devices.InputDevice;
+import li.monoid.j8080.devices.OutputDevice;
 import li.monoid.j8080.system.DeviceIO;
 import li.monoid.j8080.system.MemoryRW;
 
@@ -56,7 +56,7 @@ public class Bus implements MemoryRW, DeviceIO {
             return;
         }
 
-        device.receiveData(data);
+        device.receiveData(deviceNo, data);
     }
 
     @Override
@@ -66,6 +66,6 @@ public class Bus implements MemoryRW, DeviceIO {
             System.err.printf("Cannot receive data from unknown device: %02x%n", deviceNo);
             return 0x00;
         }
-        return device.sendData();
+        return device.sendData(deviceNo);
     }
 }

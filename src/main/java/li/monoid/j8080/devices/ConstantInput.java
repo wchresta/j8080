@@ -1,4 +1,4 @@
-package li.monoid.j8080.device;
+package li.monoid.j8080.devices;
 
 /**
  * A constant input device always outputs a constant value
@@ -11,7 +11,7 @@ public class ConstantInput implements InputDevice {
     }
 
     @Override
-    public byte sendData() {
+    public byte sendData(byte deviceNo) {
         return constValue;
     }
 }

@@ -1,4 +1,4 @@
-package li.monoid.j8080.device;
+package li.monoid.j8080.devices;
 
 /**
  * Debug output logs sent data to STDERR
@@ -11,7 +11,7 @@ public class DebugOutput implements OutputDevice {
     }
 
     @Override
-    public void receiveData(byte data) {
+    public void receiveData(byte deviceNo, byte data) {
         System.out.printf("DebugOutput %s received %02x%n", name, data);
     }
 }

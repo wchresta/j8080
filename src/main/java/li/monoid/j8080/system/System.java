@@ -3,13 +3,17 @@ package li.monoid.j8080.system;
 import li.monoid.j8080.bus.Bus;
 import li.monoid.j8080.cpu.Cpu;
 import li.monoid.j8080.cpu.instrset.InstrSet;
-import li.monoid.j8080.device.ConstantInput;
-import li.monoid.j8080.device.DebugOutput;
-import li.monoid.j8080.device.WatchDog;
+import li.monoid.j8080.devices.ConstantInput;
+import li.monoid.j8080.devices.DebugOutput;
+import li.monoid.j8080.devices.ShiftDevice;
+import li.monoid.j8080.devices.WatchDog;
 import li.monoid.j8080.memory.Memory;
 import li.monoid.j8080.screen.Screen;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class System implements Runnable {
     private final Memory memory = new Memory();
@@ -30,11 +34,14 @@ public class System implements Runnable {
         bus.registerInputDevice((byte) 0x01, new ConstantInput((byte) 0b00001000)); // Human user interface 2
         bus.registerInputDevice((byte) 0x02, new ConstantInput((byte) 0b01110000)); // Human user interface 3
 
-        bus.registerOutputDevice((byte) 0x02, new DebugOutput("Shift amount"));
         bus.registerOutputDevice((byte) 0x03, new DebugOutput("Sound port 3"));
-        bus.registerOutputDevice((byte) 0x04, new DebugOutput("Shift data"));
         bus.registerOutputDevice((byte) 0x05, new DebugOutput("Sound port 5"));
         bus.registerOutputDevice((byte) 0x06, new WatchDog());
+
+        var shiftDevice = new ShiftDevice();
+        bus.registerInputDevice((byte) 0x03, shiftDevice);
+        bus.registerOutputDevice((byte) 0x02, shiftDevice);
+        bus.registerOutputDevice((byte) 0x04, shiftDevice);
 
         cpu.addDebugPoint((short) 0x08);  // Visualize interrupt 1
         cpu.addDebugPoint((short) 0x10);  // Visualize interrupt 2
