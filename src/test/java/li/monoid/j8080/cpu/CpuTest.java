@@ -29,7 +29,7 @@ public class CpuTest {
         mem.loadRom(HexFormat.of().parseHex("23"));
 
         Assert.assertEquals("207f", String.format("%04x", registers.getHL()));
-        cpu.step();
+        cpu.processInstruction();
         Assert.assertEquals("2080", String.format("%04x", registers.getHL()));
     }
 
@@ -53,11 +53,11 @@ public class CpuTest {
         Assert.assertEquals("SP", 0x2400, 0xffff & registers.getSP());
         Assert.assertEquals("PC", 0x18d2, 0xffff & registers.getPC());
         Assert.assertArrayEquals("Stack", new byte[]{0x00, 0x00, 0x00, 0x00}, mem.readBytes(0x23fc, 4));
-        cpu.step(); // Call, before pushing PC to the stack, PC is 0x18d5 (position after the arguments).
+        cpu.processInstruction(); // Call, before pushing PC to the stack, PC is 0x18d5 (position after the arguments).
         Assert.assertEquals("SP", 0x23fe, 0xffff & registers.getSP());
         Assert.assertEquals("PC", 0x1a3a, 0xffff & registers.getPC());
         Assert.assertArrayEquals("Stack", new byte[]{0x00, 0x00, (byte) 0xd5, 0x18}, mem.readBytes(0x23fc, 4));
-        cpu.step(); // Ret
+        cpu.processInstruction(); // Ret
         Assert.assertEquals("SP", 0x2400, 0xffff & registers.getSP());
         Assert.assertEquals("PC", 0x18d5, 0xffff & registers.getPC());
         Assert.assertArrayEquals("Stack", new byte[]{0x00, 0x00, (byte) 0xd5, 0x18}, mem.readBytes(0x23fc, 4));

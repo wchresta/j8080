@@ -17,7 +17,8 @@ import java.util.Set;
 
 import static li.monoid.j8080.cpu.opcodes.OpType.MOV;
 
-public class Cpu implements InterruptHandler {
+public class Cpu implements Runnable, InterruptHandler {
+    public static final int CYCLES_PER_TICK = 4;
     private final Registers registers;
     private final Alu alu;
     private final Bus bus;
@@ -33,6 +34,7 @@ public class Cpu implements InterruptHandler {
     private int interruptSet = -1;
 
     private boolean isHalted = false;
+    private int accumulatedCycles = 0;
 
     public Cpu(InstrSet instrSet, Registers registers, Alu alu, Bus bus) {
         this.instrSet = instrSet;
@@ -80,7 +82,18 @@ public class Cpu implements InterruptHandler {
         return Cast.toShort((hi << 8) | (lo & 0xff));
     }
 
-    public int step() {
+    @Override
+    public void run() {
+        accumulatedCycles -= CYCLES_PER_TICK; // Small optimization
+        if (accumulatedCycles <= 0 && !isHalted) {
+            accumulatedCycles += processInstruction();
+        }
+        if (accumulatedCycles < 0) {
+            accumulatedCycles = 0;
+        }
+    }
+
+    public int processInstruction() {
         if (interruptSet >= 0 && interruptsEnabled) {
             var nnn = interruptSet;
             interruptsEnabled = false;

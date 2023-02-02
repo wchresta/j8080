@@ -39,9 +39,9 @@ public class System implements Runnable {
         bus.registerOutputDevice((byte) 0x06, new WatchDog());
 
         var shiftDevice = new ShiftDevice();
-        bus.registerInputDevice((byte) 0x03, shiftDevice);
-        bus.registerOutputDevice((byte) 0x02, shiftDevice);
-        bus.registerOutputDevice((byte) 0x04, shiftDevice);
+        bus.registerInputDevice(ShiftDevice.SHIFT_DEVICE_OUTPUT, shiftDevice);
+        bus.registerOutputDevice(ShiftDevice.SHIFT_DEVICE_OFFSET, shiftDevice);
+        bus.registerOutputDevice(ShiftDevice.SHIFT_DEVICE_DATA, shiftDevice);
     }
 
     public void loadRom(byte[] rom) {
@@ -49,24 +49,12 @@ public class System implements Runnable {
     }
 
     public void run() {
-        if (cpu.isHalted()) {
-            java.lang.System.out.println("CPU is halted... waiting for interrupt.");
-            return;
-        }
-
-        try {
-            cpu.step(); // TODO: Keep track of cycle
-        } catch (IllegalStateException e) {
-            java.lang.System.err.print(e);
-            java.lang.System.err.print(cpu);
-            java.lang.System.exit(1);
-        }
-    }
-
-    public void turnOn() {
         screen.turnOn();
 
-        cpuTask = scheduler.scheduleAtFixedRate(this, 0, 1000000000 / 1996800L, TimeUnit.NANOSECONDS);
+        var wantHz = 1_996_800L;
+        var nanosInSec = 1_000_000_000L;
+        var nanoPeriod = Math.floorDiv(cpu.CYCLES_PER_TICK * nanosInSec,  wantHz);
+        cpuTask = scheduler.scheduleAtFixedRate(cpu, 0, nanoPeriod, TimeUnit.NANOSECONDS);
     }
 
     public void turnOff() {

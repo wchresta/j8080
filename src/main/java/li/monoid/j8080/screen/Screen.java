@@ -22,6 +22,7 @@ public class Screen implements Runnable {
     private final int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> lineScannerTask;
+    private int lineScanState = 0;
     private final Memory memory;
     private final Bus bus;
 
@@ -43,7 +44,7 @@ public class Screen implements Runnable {
 
     public void turnOn() {
         frame.setVisible(true);
-        lineScannerTask = scheduler.scheduleAtFixedRate(this, 2000, 1000/60, TimeUnit.MILLISECONDS);
+        lineScannerTask = scheduler.scheduleAtFixedRate(this, 500, 1000/120, TimeUnit.MILLISECONDS);
     }
 
     public void turnOff() {
@@ -52,7 +53,6 @@ public class Screen implements Runnable {
 
     @Override
     public void run() {
-        bus.interrupt(0x02);  // Monitor sends a 2-interrupt whenever it's about to draw a screen.
         grabScreen();
         render();
     }
@@ -77,7 +77,16 @@ public class Screen implements Runnable {
         }
 
         var g = bs.getDrawGraphics();
-        g.drawImage(image, 0, 0, canvas.getWidth(), canvas.getHeight(), null);
+        if (lineScanState == 0) {
+            // We are drawing the upper half of the screen, which corresponds to the left half of the rotated one.
+            bus.interrupt(0x01);  // Monitor sends a 1-interrupt whenever we are around the middle.
+            g.drawImage(image, 0, 0, canvas.getWidth()/2, canvas.getHeight(), 0, 0, WIDTH/2, HEIGHT, null);
+            lineScanState = 1;
+        } else {
+            bus.interrupt(0x02);  // Monitor sends a 2-interrupt whenever we are done drawing a full screen.
+            g.drawImage(image, canvas.getWidth()/2, 0, canvas.getWidth(), canvas.getHeight(), WIDTH/2, 0, WIDTH, HEIGHT, null);
+            lineScanState = 0;
+        }
         g.dispose();
         bs.show();
     }
