@@ -10,6 +10,10 @@ import org.junit.Test;
 import java.util.HexFormat;
 
 public class CpuTest {
+    void assertEquals(String message, byte expected, byte actual) {
+        Assert.assertEquals(message, String.format("%02x", expected), String.format("%02x", actual));
+    }
+
     @Test
     public void testOpCodes() {
         byte opCode = (byte) 0xc2;
@@ -18,7 +22,7 @@ public class CpuTest {
 
     @Test
     public void testINX() {
-        Memory mem = new Memory();
+        Memory mem = new Memory(0xff);
         Bus bus = new Bus(mem);
         Registers registers = new Registers();
         Alu alu = new Alu();
@@ -34,8 +38,69 @@ public class CpuTest {
     }
 
     @Test
+    public void decr() {
+        Memory mem = new Memory(0xff);
+        Bus bus = new Bus(mem);
+        Registers registers = new Registers();
+        Alu alu = new Alu();
+        Cpu cpu = new Cpu(new Intel8080(), registers, alu, bus);
+
+        registers.setBC((short) 0x1400);
+        mem.loadRom(HexFormat.of().parseHex("05"));  // DCR B
+
+        assertEquals("B before", (byte) 0x14, registers.getB());
+        cpu.processInstruction();
+        assertEquals("B after", (byte) 0x13, registers.getB());
+    }
+
+    @Test
+    public void cpi() {
+        Memory mem = new Memory(0xff);
+        Bus bus = new Bus(mem);
+        Registers registers = new Registers();
+        Alu alu = new Alu();
+        Cpu cpu = new Cpu(new Intel8080(), registers, alu, bus);
+
+        mem.loadRom(HexFormat.of().parseHex("FE01"));  // CPI 01
+
+        alu.setAcc(0x02);
+        cpu.processInstruction();
+        Assert.assertFalse(alu.isZ());
+
+        registers.setPC(0);
+        alu.setAcc(0x01);
+        cpu.processInstruction();
+        Assert.assertTrue(alu.isZ());
+    }
+
+    @Test
+    public void shifting() {
+        Memory mem = new Memory(0xff);
+        Bus bus = new Bus(mem);
+        Registers registers = new Registers();
+        Alu alu = new Alu();
+        Cpu cpu = new Cpu(new Intel8080(), registers, alu, bus);
+
+        mem.loadRom(HexFormat.of().parseHex("070f171f"));  // RLC RRC RAL RAR
+        alu.setAcc(0x80);
+        cpu.processInstruction();
+        assertEquals("A rot left", (byte) 0x01, alu.getAcc());
+        Assert.assertTrue(alu.isCY());
+        cpu.processInstruction();
+        assertEquals("A rot right", (byte) 0x80, alu.getAcc());
+        Assert.assertTrue(alu.isCY());
+        alu.setCarry(0);
+        cpu.processInstruction();
+        assertEquals("A rot left through carry", (byte) 0x00, alu.getAcc());
+        Assert.assertTrue(alu.isCY());
+        cpu.processInstruction();
+        assertEquals("A rot right through carry", (byte) 0x80, alu.getAcc());
+        Assert.assertFalse(alu.isCY());
+    }
+
+    @Test
     public void callRet() {
-        Memory mem = new Memory();
+        Memory mem = new Memory(0xff);
         Bus bus = new Bus(mem);
         Registers registers = new Registers();
         Alu alu = new Alu();

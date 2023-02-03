@@ -9,7 +9,7 @@ import java.util.HexFormat;
 public class BusTest {
     @Test
     public void testMemoryRead() {
-        var memory = new Memory();
+        var memory = new Memory(0xff);
         memory.loadRom(HexFormat.of().parseHex("00c3d4180000f5c5d5e5c38c00"));
         var bus = new Bus(memory);
 

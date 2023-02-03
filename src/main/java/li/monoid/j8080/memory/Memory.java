@@ -6,16 +6,31 @@ import li.monoid.j8080.system.MemoryRW;
  * Memory provides memory and some functions that reflect hardware circuitry like address space mirroring.
  */
 public class Memory implements MemoryRW {
-    public static final int CAPACITY = 0x4000;  // The actual memory capacity, regardless of address space mapping.
-    public static final int ROM_CAPCITY = 0x2000;
-    private final byte[] buffer = new byte[CAPACITY];
+    public int memSize;  // The actual memory capacity, regardless of address space mapping.
+    public int romPos;
+    public int romSize;
+    private final byte[] buffer;
+
+    public Memory(int memSize) {
+        this.memSize = memSize;
+        this.buffer = new byte[memSize];
+    }
 
     public void loadRom(byte[] rom) {
-        java.lang.System.arraycopy(rom, 0, buffer, 0, rom.length);
+        loadRom(rom, 0);
+    }
+    public void loadRom(byte[] rom, int romPos) {
+        romSize = rom.length;
+        this.romPos = romPos;
+        java.lang.System.arraycopy(rom, 0, buffer, romPos, romSize);
+    }
+
+    public void setRomSize(int romSize) {
+        this.romSize = romSize;
     }
 
     public void writeByte(int address, byte data) {
-        if (!(ROM_CAPCITY <= address && address < CAPACITY)) {
+        if (!(romSize+romPos <= address && address < memSize)) {
             throw new IllegalStateException(String.format("Address %04x is not writable", address));
         }
         buffer[address] = data;
@@ -29,7 +44,7 @@ public class Memory implements MemoryRW {
     }
 
     public byte readByte(int address) {
-        if (address < CAPACITY) {
+        if (address < memSize) {
             return buffer[address];
         }
         return 0;

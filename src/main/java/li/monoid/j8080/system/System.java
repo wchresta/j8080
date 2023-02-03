@@ -16,7 +16,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class System implements Runnable {
-    private final Memory memory = new Memory();
+    private final Memory memory = new Memory(0x4000);
     private final Bus bus = new Bus(memory);
 
     private final Screen screen = new Screen(memory, bus);

@@ -18,7 +18,7 @@ import java.util.Set;
 import static li.monoid.j8080.cpu.opcodes.OpType.MOV;
 
 public class Cpu implements Runnable, InterruptHandler {
-    public static final int CYCLES_PER_TICK = 4;
+    public static final int CYCLES_PER_TICK = 8;
     private final Registers registers;
     private final Alu alu;
     private final Bus bus;
@@ -105,6 +105,19 @@ public class Cpu implements Runnable, InterruptHandler {
         var opCodeAddress = registers.getPC();
         var opCodeByte = bus.readByte(opCodeAddress);
         var opCode = instrSet.getOpCode(opCodeByte);
+        if (debugInstructions) {
+            System.out.println(showInstr(opCode, opCodeAddress));
+        }
+        if (debugPoints.contains(opCodeAddress)) {
+            System.out.print(this);
+            if (debugMemAddresses.size() > 0) {
+                System.out.println("Debug memory:");
+                for (short memAddr : debugMemAddresses) {
+                    System.out.printf("  %04x: %02x%n", memAddr, bus.readByte(memAddr));
+                }
+            }
+        }
+
         registers.incPC();
 
         // When EI is called, interrupts are not immediately activated, but only after on the next instruction.
@@ -123,9 +136,7 @@ public class Cpu implements Runnable, InterruptHandler {
 
         var kind = opCode.kind;
         var cycles = opCode.kind.getCycles(opCode.opCode);
-        if (debugInstructions) {
-            System.out.printf("%04x: %s %04x%n", opCodeAddress, kind.fullMnemonic(opCodeByte), arg);
-        }
+
         if (kind instanceof UnarKind) {
             cycles += stepUnarKind(opCode, arg);
         } else if (kind instanceof MoveKind) {
@@ -145,19 +156,11 @@ public class Cpu implements Runnable, InterruptHandler {
             var rp = RegisterPair.fromOpCode(opCodeByte);
             cycles += stepRegPKind(opCode, rp, arg);
         } else {
-            System.err.println("Unsupported CPU instruction kind: " + opCode.mnemonic);
+            System.err.printf("Unsupported CPU instruction %s(%02x) @ %04x", opCode.mnemonic, opCodeByte, opCodeAddress);
+            System.exit(1);
             cycles += 1;
         }
 
-        if (debugPoints.contains(opCodeAddress)) {
-            System.out.print(this);
-            if (debugMemAddresses.size() > 0) {
-                System.out.println("Debug memory:");
-                for (short memAddr : debugMemAddresses) {
-                    System.out.printf("  %04x: %02x%n", memAddr, bus.readByte(memAddr));
-                }
-            }
-        }
 
         return cycles;
     }
@@ -268,8 +271,8 @@ public class Cpu implements Runnable, InterruptHandler {
             case ANA -> alu.and(readFromReg(reg));
             case CMP -> alu.cmp(readFromReg(reg));
             case DCR -> {
-                var val = readFromReg(reg) - 1;
-                writeToReg(reg, Cast.toByte(val));
+                byte val = Cast.toByte(readFromReg(reg) - 1);
+                writeToReg(reg, val);
                 alu.setZSPFrom(val);
             }
             case INR -> {
@@ -324,11 +327,11 @@ public class Cpu implements Runnable, InterruptHandler {
             case ORI -> alu.or(arg);
             case OUT -> bus.writeToDevice(Cast.toByte(arg), alu.getAcc());
             case PCHL -> registers.setPC(registers.getHL());
-            case RAL -> alu.rotateLeft();
-            case RAR -> alu.rotateRight();
+            case RAL -> alu.rotateLeftC();
+            case RAR -> alu.rotateRightC();
             case RET -> registers.setPC(popShort());
-            case RLC -> alu.rotateLeftC();
-            case RRC -> alu.rotateRightC();
+            case RLC -> alu.rotateLeft();
+            case RRC -> alu.rotateRight();
             case SBI -> alu.subC(arg);
             case SHLD -> bus.writeShort(arg, registers.getHL());
             case SPHL -> registers.setSP(registers.getHL());
@@ -356,7 +359,10 @@ public class Cpu implements Runnable, InterruptHandler {
         var sb = new StringBuilder(String.format("  Stack: %04x%n", bus.readShort(registers.getSP() > 1 ? registers.getSP() - 2 : 0)));
         sb.append(String.format("  %04x > %04x%n", registers.getSP(), bus.readShort(registers.getSP())));
         for (int i = 1; i < size; ++i) {
-            sb.append(String.format("  %04x   %04x%n", registers.getSP()+2*i, bus.readShort(registers.getSP() + 2*i)));
+            sb.append(
+                    String.format("  %04x   %04x%n",
+                            Cast.toShort(registers.getSP()+2*i),
+                            bus.readShort(Cast.toShort(registers.getSP() + 2*i))));
         }
         return sb.toString();
     }
@@ -376,7 +382,14 @@ public class Cpu implements Runnable, InterruptHandler {
         return showRegisters() + showStack(context);
     }
 
+    public String showInstr(OpCode opCode, short opCodeAddress) {
+        return String.format("%04x: %s%n", opCodeAddress, opCode.kind.fullMnemonic(opCode.opCode));
+    }
+
     public String toString() {
-        return showRegisters() + showStack(4);
+        var opCodeAddress = registers.getPC();
+        var opCodeByte = bus.readByte(opCodeAddress);
+        var opCode = instrSet.getOpCode(opCodeByte);
+        return showInstr(opCode, opCodeAddress) + showRegisters() + showStack(4);
     }
 }
