@@ -9,8 +9,8 @@ public class Alu {
     private static final int VALUE_CARRY_MASK = VALUE_MASK | CARRY_MASK;
     private int acc = 0;  // Size 8
 
-    private int z = 0, s = 0, p = 0, cy = 0;
-    // TODO: Add support for auxiliary carry
+    private int z = 0, s = 0, p = 0, cy = 0, ac = 0;
+    // NOTE: AC is not fully implemented
 
     public Alu() {
     }
@@ -31,6 +31,10 @@ public class Alu {
         return cy > 0;
     }
 
+    public boolean isAC() {
+        return ac > 0;
+    }
+
     public byte getAcc() {
         return Cast.toByte(acc);
     }
@@ -49,7 +53,7 @@ public class Alu {
     }
 
     private void setSignFrom(int val) {
-        s = (val & SIGN_MASK) >> 7;
+        s = ((val & SIGN_MASK) >> 7) & 1;
     }
 
     private void setParityFrom(int val) {
@@ -66,7 +70,7 @@ public class Alu {
     }
 
     public void setCarryFrom(int val) {
-        cy = (val & CARRY_MASK) >> 8;
+        cy = ((val & CARRY_MASK) >> 8) & 1;
     }
 
     private void setFlagsFrom(int val) {
@@ -93,10 +97,10 @@ public class Alu {
 
     public byte getFlagByte() {
         var flags = 0b00000010;  // Bit 1 is always 1
-        flags |= cy;
-        flags |= p << 2;
-        flags |= z << 6;
-        flags |= s << 7;
+        flags |= cy & 1;
+        flags |= (p << 2) & 0x4;
+        flags |= (z << 6) & 0x40;
+        flags |= (s << 7) & 0x80;
         return Cast.toByte(flags);
     }
 
@@ -104,6 +108,7 @@ public class Alu {
         int iFlags = Byte.toUnsignedInt(flags);
         cy = iFlags & 1;
         p = (iFlags >> 2) & 1;
+        ac = (iFlags >> 5) & 1;
         z = (iFlags >> 6) & 1;
         s = (iFlags >> 7) & 1;
     }
@@ -128,7 +133,7 @@ public class Alu {
      * Acc = Acc - val
      */
     public void sub(int val) {
-        acc = -val & VALUE_MASK;
+        acc -= (val & VALUE_MASK);
         setFlagsFrom(acc);
     }
 
@@ -141,7 +146,7 @@ public class Alu {
     }
 
     public void daa() {
-        if ((0x0f & acc) > 9) { // TODO: or AC flag is set
+        if ((0x0f & acc) > 9 | isAC()) {
             add(6);
         }
         if ((0xf0 & acc) > 0x90 | cy > 0) {
@@ -192,12 +197,12 @@ public class Alu {
 
     public void rotateRight() {
         cy = acc & 1;
-        acc = (acc >> 1) | (cy << 7);
+        acc = ((acc >> 1) & 0x7f) | ((cy << 7) & 0x80);
     }
 
     public void rotateRightC() {
         var newCy = acc & 1;
-        acc = (acc >> 1) | (cy << 7);
+        acc = ((acc >> 1) & 0x7f) | ((cy << 7) & 0x80);
         cy = newCy;
     }
 }

@@ -86,9 +86,14 @@ public class CpuTest {
         cpu.processInstruction();
         assertEquals("A rot left", (byte) 0x01, alu.getAcc());
         Assert.assertTrue(alu.isCY());
+
+        alu.setAcc(0x31);
+        alu.setCarry(0);
         cpu.processInstruction();
-        assertEquals("A rot right", (byte) 0x80, alu.getAcc());
+        assertEquals("A rot right", (byte) 0x98, alu.getAcc());
         Assert.assertTrue(alu.isCY());
+
+        alu.setAcc(0x80);
         alu.setCarry(0);
         cpu.processInstruction();
         assertEquals("A rot left through carry", (byte) 0x00, alu.getAcc());

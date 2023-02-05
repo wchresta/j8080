@@ -2,6 +2,8 @@ package li.monoid.j8080.memory;
 
 import li.monoid.j8080.system.MemoryRW;
 
+import java.util.Arrays;
+
 /**
  * Memory provides memory and some functions that reflect hardware circuitry like address space mirroring.
  */
@@ -23,6 +25,10 @@ public class Memory implements MemoryRW {
         romSize = rom.length;
         this.romPos = romPos;
         java.lang.System.arraycopy(rom, 0, buffer, romPos, romSize);
+    }
+
+    public void clear() {
+        Arrays.fill(buffer, (byte) 0);
     }
 
     public void setRomSize(int romSize) {

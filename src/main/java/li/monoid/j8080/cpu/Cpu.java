@@ -105,8 +105,10 @@ public class Cpu implements Runnable, InterruptHandler {
         var opCodeAddress = registers.getPC();
         var opCodeByte = bus.readByte(opCodeAddress);
         var opCode = instrSet.getOpCode(opCodeByte);
+
+        var debugStr = "";
         if (debugInstructions) {
-            System.out.println(showInstr(opCode, opCodeAddress));
+            debugStr = showInstr(opCode, opCodeAddress);
         }
         if (debugPoints.contains(opCodeAddress)) {
             System.out.print(this);
@@ -132,6 +134,10 @@ public class Cpu implements Runnable, InterruptHandler {
             arg |= 0xff & bus.readByte(registers.incPC());
         } else if (argNum == 2) {
             arg = bus.readShort(registers.incPC(2));
+        }
+
+        if (debugInstructions) {
+            System.out.printf("%-14s %4x%n", debugStr, arg);
         }
 
         var kind = opCode.kind;
@@ -282,7 +288,7 @@ public class Cpu implements Runnable, InterruptHandler {
             }
             case MVI -> writeToReg(reg, Cast.toByte(arg));
             case ORA -> alu.or(readFromReg(reg));
-            case RST -> interrupt((0b001110000 & opCode.opCode) >> 4);
+            case RST -> interrupt((0b00111000 & opCode.opCode) >> 3);
             case SBB -> alu.subC(readFromReg(reg));
             case SUB -> alu.sub(readFromReg(reg));
             case XRA -> alu.xor(readFromReg(reg));
@@ -383,7 +389,7 @@ public class Cpu implements Runnable, InterruptHandler {
     }
 
     public String showInstr(OpCode opCode, short opCodeAddress) {
-        return String.format("%04x: %s%n", opCodeAddress, opCode.kind.fullMnemonic(opCode.opCode));
+        return String.format("%04x: %s", opCodeAddress, opCode.kind.fullMnemonic(opCode.opCode));
     }
 
     public String toString() {
