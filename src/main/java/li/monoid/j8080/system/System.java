@@ -3,10 +3,7 @@ package li.monoid.j8080.system;
 import li.monoid.j8080.bus.Bus;
 import li.monoid.j8080.cpu.Cpu;
 import li.monoid.j8080.cpu.instrset.InstrSet;
-import li.monoid.j8080.devices.ConstantInput;
-import li.monoid.j8080.devices.DebugOutput;
-import li.monoid.j8080.devices.ShiftDevice;
-import li.monoid.j8080.devices.WatchDog;
+import li.monoid.j8080.devices.*;
 import li.monoid.j8080.memory.Memory;
 import li.monoid.j8080.screen.Screen;
 
@@ -19,7 +16,8 @@ public class System implements Runnable {
     private final Memory memory = new Memory(0x4000);
     private final Bus bus = new Bus(memory);
 
-    private final Screen screen = new Screen(memory, bus);
+    private final KeyboardInput keyboardInput = new KeyboardInput();
+    private final Screen screen = new Screen(memory, bus, keyboardInput);
 
     private final Cpu cpu;
 
@@ -31,8 +29,8 @@ public class System implements Runnable {
         bus.setInterruptHandler(cpu);
 
         bus.registerInputDevice((byte) 0x00, new ConstantInput((byte) 0b00001110)); // Human user interface (ignored)
-        bus.registerInputDevice((byte) 0x01, new ConstantInput((byte) 0b00001000)); // Human user interface 2
-        bus.registerInputDevice((byte) 0x02, new ConstantInput((byte) 0b01110000)); // Human user interface 3
+        bus.registerInputDevice((byte) 0x01, keyboardInput);
+        bus.registerInputDevice((byte) 0x02, keyboardInput);
 
         bus.registerOutputDevice((byte) 0x03, new DebugOutput("Sound port 3"));
         bus.registerOutputDevice((byte) 0x05, new DebugOutput("Sound port 5"));

@@ -5,6 +5,7 @@ import li.monoid.j8080.memory.Memory;
 
 import javax.swing.JFrame;
 import java.awt.*;
+import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.util.concurrent.Executors;
@@ -26,11 +27,12 @@ public class Screen implements Runnable {
     private final Memory memory;
     private final Bus bus;
 
-    public Screen(Memory memory, Bus bus) {
+    public Screen(Memory memory, Bus bus, KeyListener keyListener) {
         this.memory = memory;
         this.bus = bus;
         canvas = new Canvas();
         frame = new JFrame();
+        frame.addKeyListener(keyListener);
 
         canvas.setPreferredSize(new Dimension(WIDTH*4, HEIGHT*4));
         canvas.setMinimumSize(new Dimension(WIDTH*4, HEIGHT*4));
